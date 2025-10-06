@@ -45,8 +45,8 @@ def run_simple_demo():
         if any(terminations.values()):
             print("Episode terminated!")
             break
-    
-    print("Demo completed!")
+
+    print("Demo completed! Well done!")
 
 
 if __name__ == '__main__':
