@@ -1,0 +1,9 @@
+# Basic requirements for Project Argus
+numpy>=1.21.0
+matplotlib>=3.5.0
+pettingzoo>=1.22.0
+gymnasium>=0.28.0
+
+# Add more as needed
+# torch>=1.11.0
+# stable-baselines3>=2.0.0
