@@ -3,22 +3,30 @@ Simple demo script for Project Argus
 
 Basic demonstration of the rescue system.
 """
-
+from pettingzoo.mpe import simple_spread_v3 
+from pettingzoo.utils import aec_to_parallel
 from src.random_agent import RandomAgent
 from env.simple_rescue import SimpleRescueEnv
 
 
 def run_simple_demo():
     """Run a basic demo."""
-    print("🚁 Project Argus - Simple Demo 🚁")
+    print("🚁 Project Argus - Simple Demo! 🚁")
     
-    # Create environment
-    env = SimpleRescueEnv(num_agents=3, grid_size=10)
+    # Create pettingzoo environment
+    aec_env = simple_spread_v3.env(N=3, max_cycles=25)
+
+    # Converts aec environment to parallel environment
+    env = aec_to_parallel(aec_env)
+
+    
+    # Initialize the environment
+    env.reset()  # Set a seed for reproducibility
     
     # Create random agents
     agents = {}
     for agent_id in env.possible_agents:
-        agents[agent_id] = RandomAgent(agent_id, env.action_space)
+        agents[agent_id] = RandomAgent(agent_id, env.action_space(agent_id))
     
     print(f"Created environment with {len(agents)} agents")
     
