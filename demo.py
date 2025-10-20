@@ -20,7 +20,7 @@ def run_simple_demo():
     env = aec_to_parallel(aec_env)
 
     
-    # Initialize the environment
+    # Set up the environment
     env.reset() 
     
     # Create random agents
