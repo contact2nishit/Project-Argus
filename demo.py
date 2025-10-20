@@ -14,14 +14,14 @@ def run_simple_demo():
     print("🚁 Project Argus - Simple Demo! 🚁")
     
     # Create pettingzoo environment
-    aec_env = simple_spread_v3.env(N=3, max_cycles=25)
+    aec_env = simple_spread_v3.env(N=3, max_cycles=25, render_mode = "human")
 
     # Converts aec environment to parallel environment
     env = aec_to_parallel(aec_env)
 
     
     # Initialize the environment
-    env.reset()  # Set a seed for reproducibility
+    env.reset() 
     
     # Create random agents
     agents = {}
