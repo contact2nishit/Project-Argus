@@ -30,6 +30,21 @@ class SimpleRescueEnv(ParallelEnv):
         """Reset the environment."""
         self.agents = self.possible_agents[:]
         
+        #make positions for each agent as a dictionary
+        self.positions = {}
+        for agent in self.agents:
+            x = np.random.randint(0, self.grid_size)
+            y = np.random.randint(0,self.grid_size)
+
+            self.positions[agent] = [x,y]
+        
+
+        #make a position for only one survivor (eventually test with multiple different survivors) -> for loop
+        self.survivor = [np.random.randint(0,self.grid_size), np.random.randint(0,self.grid_size)]
+
+
+
+
         # Simple random observations for all agents
         observations = {}
         for agent in self.agents:
@@ -48,9 +63,20 @@ class SimpleRescueEnv(ParallelEnv):
         infos = {}
         
         for agent in self.agents:
+
+            ##include a if statement to see if the position of the agent is equal to the position of the survivor
+            if np.array_equal(self.positions[agent], self.survivor):
+                rewards[agent] = 1
+                terminations[agent] = True
+            ##if it is not the survivor
+            else:
+                rewards[agent] = -0.1
+                terminations[agent] = False
+        
+
+
+
             observations[agent] = np.random.random(4).astype(np.float32)
-            rewards[agent] = np.random.random() - 0.5  # Random reward
-            terminations[agent] = np.random.random() < 0.01  # 1% chance to terminate
             truncations[agent] = False
             infos[agent] = {}
         
