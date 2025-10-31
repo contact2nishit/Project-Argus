@@ -21,7 +21,7 @@ def run():
     # Run one episode
     observations, infos = env.reset()
     
-    for step in range(3):
+    for step in range(100):
         print(f"Step {step + 1}")
         
         # Get actions from agents

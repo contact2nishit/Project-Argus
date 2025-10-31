@@ -21,17 +21,17 @@ class Env(ParallelEnv):
         self._num_agents = num_agents
         self.origin = origin
         self.bbox = bbox # bbox in terms of lon/lat
-        self.fov = 20
+        self.mem_lim = 20
 
         # Agent names
         self.possible_agents = [f"drone_{i}" for i in range(num_agents)]
         self.agents = self.possible_agents[:] # copy
                                                                             
-        # Each agent gets a the coordinates of the entities around it
-        self.observation_space = spaces.Box(low=0, high=np.inf, shape=(self.fov,3), dtype=np.float32) # (x,y,type)
+        # Each agent gets the coordinates of the entities around it
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(self.mem_lim,3), dtype=np.float32) # (x,y,type)
 
-        #
-        self.action_space = spaces.Discrete(4)  #up, down, left, right
+        # Each agent can control its velocity and check if there is a survivor near its position
+        self.action_space = spaces.Box(low=np.array([-25,-25,0]), high=np.array ([25,25,1]), dtype=np.float32) #(vx,xy,check_flag) 
         
         # get geospatial data and generate map 
         self.generate_map()
@@ -102,12 +102,12 @@ class Env(ParallelEnv):
 
         # Randomly spread the survivors throughout the map
         mx, my = self.get_max()
-        num_survivors = np.random.randint(low=1,high=(mx+my)*0.01, dtype = np.int32)
-        spos = [
+        self.num_survivors = np.random.randint(low=1,high=(mx+my)*0.01, dtype = np.int32)
+        self.survivor_pos = [
             shapely.geometry.Point(np.random.uniform(0,mx), np.random.uniform(0,my))
-            for _ in range(num_survivors)
+            for _ in range(self.num_survivors)
             ]
-        self.survivor_pos = gpd.GeoDataFrame(geometry=spos)
+        self.survivor_pos = gpd.GeoDataFrame(geometry=self.survivor_pos)
 
         # Distribute positions in the region near the origin (1% of total map size)
         self.pos = {agent: shapely.geometry.Point(np.random.uniform(0,mx*0.01),np.random.uniform(0,my*0.01)) for agent in self.agents}
@@ -120,6 +120,7 @@ class Env(ParallelEnv):
         return observations, infos
     
     def step(self, actions):
+        print(self.num_survivors)
         """Execute one step."""
         # Simple random rewards and termination
         observations = {}
@@ -130,25 +131,33 @@ class Env(ParallelEnv):
 
         for agent in self.agents:
             self.pos[agent], penalty = self.update_positions(actions[agent], self.pos[agent])
-            observations[agent] = self.get_observations(self.pos[agent])
-            rewards[agent] =  self.get_rewards(self.pos[agent]) + penalty # Random reward
+            observations[agent] = self.get_observations(self.pos[agent],100)
+            rewards[agent] =  self.get_rewards(self.pos[agent], actions[agent][2]) + penalty 
             terminations[agent] = True if self.num_survivors == 0 else False
             truncations[agent] = False
             infos[agent] = {}
         
         return observations, rewards, terminations, truncations, infos
     
-    def get_rewards(self, apos):
+    def get_rewards(self, apos, check):
         x,y = apos.x, apos.y
-        if self.get_cell(x,y) == 0: # on empty cell
-            return -0.1
+        check = 1
+        if check == 1:
+            local_margin=5
+            bbox = shapely.box(x-local_margin, y-local_margin, x+local_margin, y+local_margin)
+            # Get survivors
+            found_survivors = self.get_entities(self.survivor_pos, bbox).geometry
+            num_found = len(found_survivors)
+            reward  = len(found_survivors)*2 if num_found > 0 else -1
+            
+            # Remove found survivors from survivor_pos
+            if num_found > 0:
+                remaining_survivors = self.survivor_pos[~self.survivor_pos.geometry.isin(found_survivors.geometry)]
+                self.survivor_pos = remaining_survivors.reset_index(drop=True)
+                self.num_survivors -= num_found
+            return reward
         
-        elif self.get_cell(x,y) == 1: # on survivor
-            self.map[x,y] = 0 # remove survivor
-            return 1
-        
-        elif self.get_cell(x,y) == 2: # on another agent
-            return -0.5 # discourage cluster and encourage exploration
+        return 0
 
     def get_observations(self, apos, field_size):
         # define region
@@ -176,13 +185,13 @@ class Env(ParallelEnv):
         all_entities = np.vstack([feats, survivors, agents]) # combine everything
 
         #truncate/pad if required
-        ae = all_entities[:self.fov, :] 
+        ae = all_entities[:self.mem_lim, :] 
         ae = self.pad(ae)
         return ae 
     
     def pad(self, ae):
-        if len(ae) < self.fov:
-            pad = np.ones((self.fov - ae.shape[0], ae.shape[1]), dtype=ae.dtype) * -1
+        if len(ae) < self.mem_lim:
+            pad = np.ones((self.mem_lim - ae.shape[0], ae.shape[1]), dtype=ae.dtype) * -1
             return np.vstack([ae,pad])
         return ae
 
@@ -197,29 +206,30 @@ class Env(ParallelEnv):
         possible_matches_index = list(entity.sindex.intersection(bbox.bounds))
         possible_matches = entity.iloc[possible_matches_index]
         return possible_matches[possible_matches.intersects(bbox)]
+    
+    def in_bounds(self, x,y,vx,vy):
+        maxx, maxy = self.get_max()
+        if x + vx <= 0 or x + vx >= maxx or y + vy <= 0 or y + vy >= maxy:
+            return False
+        return True
 
-    def update_positions(self, action, pos):
+    def update_positions(self, action, apos):
         """
-        function will consider the actions for each agent and then update the positions accordingly
-
-        up = 0
-        down = 1
-        left = 2
-        right = 3
-
+        update positions based on actions
+        returns (x_new, y_new), penalty
+        penalty is given if the agent tries to go out of bounds
         """ 
-        x,y = pos
-        if action == 0 and y-1 >= 0:
-            return [x, y-1], 0.0
-        
-        elif action == 1 and y+1 < self.grid_size:
-            return [x, y+1], 0.0
+        x,y = apos.x, apos.y
+        vx,vy, _ = action
 
-        elif action == 2 and x-1 >= 0:
-            return [x-1, y], 0.0
+        # update positions 
+        if self.in_bounds(x,y, vx,vy):
+            x += vx
+            y += vy
+            return shapely.geometry.Point(x,y), 0
 
-        elif action == 3 and x+1 < self.grid_size:
-            return [x+1, y], 0.0
+        else:
+            return shapely.geometry.Point(x,y), -1
+
         
-        else: # Penalize for invalid move
-            return [x, y], -0.1
+
