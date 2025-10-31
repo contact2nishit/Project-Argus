@@ -9,25 +9,29 @@ from env.simple_rescue import SimpleRescueEnv
 
 
 def run_simple_demo():
-    """Run a basic demo."""
-    print("🚁 Project Argus - Simple Demo 🚁")
+    """Run a basic demo with visualization."""
+    print("🚁 Project Argus - Visual Demo 🚁\n")
+    print("Watch the drones search for survivors!\n")
+    time.sleep(2)
     
     # Create environment
-    env = SimpleRescueEnv(num_agents=3, grid_size=10)
+    env = SimpleRescueEnv(num_agents=3, grid_size=8)
     
     # Create random agents
     agents = {}
     for agent_id in env.possible_agents:
         agents[agent_id] = RandomAgent(agent_id, env.action_space)
     
-    print(f"Created environment with {len(agents)} agents")
-    
     # Run one episode
     observations, infos = env.reset()
     
-    for step in range(10):  # Run 10 steps
-        print(f"Step {step + 1}")
-        
+    # Show initial state
+    env.render()
+    print(f"🎯 Mission: Find {len(env.survivor_positions)} survivors!")
+    print("⏸️  Starting in 2 seconds...\n")
+    time.sleep(2)
+    
+    for step in range(20):  # Run 20 steps
         # Get actions from agents
         actions = {}
         for agent_id, agent in agents.items():
@@ -37,16 +41,28 @@ def run_simple_demo():
         # Step environment
         observations, rewards, terminations, truncations, infos = env.step(actions)
         
-        # Print step info
+        # Render the grid
+        env.render()
+        
+        # Show rewards
         total_reward = sum(rewards.values())
-        print(f"  Total reward: {total_reward:.2f}")
+        print(f"💰 Total Reward: {total_reward:+.2f}")
+        
+        # Show drone positions
+        for agent_id in env.agents:
+            pos = infos[agent_id]['position']
+            print(f"   {agent_id}: ({pos[0]}, {pos[1]})")
+        
+        # Wait before next step
+        time.sleep(1)  # 1 second delay between steps
         
         # Check if done
-        if any(terminations.values()):
-            print("Episode terminated!")
+        if any(terminations.values()) or any(truncations.values()):
+            print("\n✅ Mission Complete!")
             break
     
-    print("Demo completed! (testing commit)")
+    print("\n🎉 Demo completed!")
+    print("=" * 40)
 
 
 if __name__ == '__main__':
