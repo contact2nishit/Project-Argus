@@ -24,6 +24,9 @@ experiments/results/
 experiments/models/
 *.log
 
+# Claude Code context file
+CLAUDE.md
+
 # OS
 .DS_Store
 Thumbs.db
