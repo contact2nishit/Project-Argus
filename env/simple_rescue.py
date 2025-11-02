@@ -29,6 +29,8 @@ class SimpleRescueEnv(ParallelEnv):
         # Track positions for visualization
         self.agent_positions = {}
         self.survivor_positions = []
+        self.rescued_survivors = []
+        self.previous_distances = {}  # Track distance to nearest survivor for each agent
         
     def reset(self, seed=None, options=None):
         """Reset the environment."""
@@ -51,6 +53,13 @@ class SimpleRescueEnv(ParallelEnv):
                 np.random.randint(0, self.grid_size)
             ])
         
+        self.rescued_survivors = []
+        
+        # Initialize previous distances for reward calculation
+        self.previous_distances = {}
+        for agent in self.agents:
+            self.previous_distances[agent] = self._get_min_distance(agent)
+        
         # Simple random observations for all agents
         observations = {}
         for agent in self.agents:
@@ -58,6 +67,24 @@ class SimpleRescueEnv(ParallelEnv):
         
         infos = {agent: {'position': self.agent_positions[agent]} for agent in self.agents}
         return observations, infos
+    
+    def _get_min_distance(self, agent):
+        """Get Manhattan distance to nearest unrescued survivor."""
+        agent_pos = self.agent_positions[agent]
+        
+        # Get unrescued survivors
+        unrescued = [s for s in self.survivor_positions if s not in self.rescued_survivors]
+        
+        if len(unrescued) == 0:
+            return 0
+        
+        min_dist = float('inf')
+        for survivor_pos in unrescued:
+            dist = abs(agent_pos[0] - survivor_pos[0]) + abs(agent_pos[1] - survivor_pos[1])
+            if dist < min_dist:
+                min_dist = dist
+        
+        return min_dist
     
     def step(self, actions):
         """Execute one step."""
@@ -83,7 +110,7 @@ class SimpleRescueEnv(ParallelEnv):
                 new_pos[1] = max(0, min(self.grid_size - 1, new_pos[1]))
                 self.agent_positions[agent] = new_pos
         
-        # Simple random rewards and termination
+        # Calculate rewards based on meaningful metrics
         observations = {}
         rewards = {}
         terminations = {}
@@ -91,10 +118,43 @@ class SimpleRescueEnv(ParallelEnv):
         infos = {}
         
         for agent in self.agents:
+            reward = 0.0
+            
+            # Check if agent found a survivor
+            agent_pos = self.agent_positions[agent]
+            for survivor_pos in self.survivor_positions:
+                if agent_pos == survivor_pos and survivor_pos not in self.rescued_survivors:
+                    reward += 10.0  # Big reward for rescuing a survivor!
+                    self.rescued_survivors.append(survivor_pos)
+                    infos[agent] = infos.get(agent, {})
+                    infos[agent]['rescued'] = True
+            
+            # Reward for getting closer to nearest survivor
+            current_distance = self._get_min_distance(agent)
+            previous_distance = self.previous_distances.get(agent, current_distance)
+            
+            if len(self.rescued_survivors) < len(self.survivor_positions):
+                # Distance-based reward: positive for getting closer, negative for moving away
+                distance_reward = (previous_distance - current_distance) * 0.1
+                reward += distance_reward
+            
+            # Small penalty for each step to encourage efficiency
+            reward -= 0.01
+            
+            # Update previous distance for next step
+            self.previous_distances[agent] = current_distance
+            
             observations[agent] = np.random.random(4).astype(np.float32)
-            rewards[agent] = np.random.random() - 0.5  # Random reward
-            terminations[agent] = np.random.random() < 0.01  # 1% chance to terminate
+            rewards[agent] = reward
+            
+            # Terminate when all survivors are rescued
+            all_rescued = len(self.rescued_survivors) >= len(self.survivor_positions)
+            terminations[agent] = all_rescued
             truncations[agent] = False
-            infos[agent] = {'position': self.agent_positions[agent]}
+            
+            if agent not in infos:
+                infos[agent] = {}
+            infos[agent]['position'] = self.agent_positions[agent]
+            infos[agent]['nearest_survivor_distance'] = current_distance
         
         return observations, rewards, terminations, truncations, infos
