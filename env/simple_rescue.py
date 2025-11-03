@@ -60,10 +60,10 @@ class SimpleRescueEnv(ParallelEnv):
         for agent in self.agents:
             self.previous_distances[agent] = self._get_min_distance(agent)
         
-        # Simple random observations for all agents
+        # Create meaningful observations for all agents
         observations = {}
         for agent in self.agents:
-            observations[agent] = np.random.random(4).astype(np.float32)
+            observations[agent] = self._get_observation(agent)
         
         infos = {agent: {'position': self.agent_positions[agent]} for agent in self.agents}
         return observations, infos
@@ -85,6 +85,51 @@ class SimpleRescueEnv(ParallelEnv):
                 min_dist = dist
         
         return min_dist
+    
+    def _get_observation(self, agent):
+        """Get meaningful observation for the agent.
+        
+        Returns a 4D observation:
+        - normalized x position (0-1)
+        - normalized y position (0-1)
+        - normalized x distance to nearest survivor (-1 to 1)
+        - normalized y distance to nearest survivor (-1 to 1)
+        """
+        agent_pos = self.agent_positions[agent]
+        
+        # Get unrescued survivors
+        unrescued = [s for s in self.survivor_positions if s not in self.rescued_survivors]
+        
+        if len(unrescued) == 0:
+            # No survivors left, return current position only
+            obs = np.array([
+                agent_pos[0] / self.grid_size,
+                agent_pos[1] / self.grid_size,
+                0.0,
+                0.0
+            ], dtype=np.float32)
+        else:
+            # Find nearest survivor
+            min_dist = float('inf')
+            nearest_survivor = None
+            for survivor_pos in unrescued:
+                dist = abs(agent_pos[0] - survivor_pos[0]) + abs(agent_pos[1] - survivor_pos[1])
+                if dist < min_dist:
+                    min_dist = dist
+                    nearest_survivor = survivor_pos
+            
+            # Calculate relative direction to nearest survivor
+            dx = (nearest_survivor[0] - agent_pos[0]) / self.grid_size
+            dy = (nearest_survivor[1] - agent_pos[1]) / self.grid_size
+            
+            obs = np.array([
+                agent_pos[0] / self.grid_size,
+                agent_pos[1] / self.grid_size,
+                dx,
+                dy
+            ], dtype=np.float32)
+        
+        return obs
     
     def step(self, actions):
         """Execute one step."""
@@ -144,7 +189,7 @@ class SimpleRescueEnv(ParallelEnv):
             # Update previous distance for next step
             self.previous_distances[agent] = current_distance
             
-            observations[agent] = np.random.random(4).astype(np.float32)
+            observations[agent] = self._get_observation(agent)
             rewards[agent] = reward
             
             # Terminate when all survivors are rescued

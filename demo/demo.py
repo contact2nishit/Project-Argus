@@ -4,9 +4,16 @@ Demo script for Project Argus
 Includes a weather-based rescue simulation.
 """
 
+import sys
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 from src.random_agent import RandomAgent
 from env.simple_rescue import SimpleRescueEnv  
-from env.weather_data.weather_rescue import WeatherRescueEnv  
+# from env.weather_data.weather_rescue import WeatherRescueEnv  # Not yet implemented  
 
 
 def run_simple_demo():
@@ -96,5 +103,5 @@ def run_weather_demo():
 
 
 if __name__ == '__main__':
-    # run_simple_demo()  
-    run_weather_demo()  
+    run_simple_demo()  
+    # run_weather_demo()  # Weather environment not yet implemented  

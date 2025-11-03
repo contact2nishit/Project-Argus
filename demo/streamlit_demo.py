@@ -6,6 +6,13 @@ Interactive web-based visualization of the rescue mission.
 
 import streamlit as st
 import numpy as np
+import sys
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
 from src.random_agent import RandomAgent
 from src.heuristic_agent import HeuristicAgent
 from env.simple_rescue import SimpleRescueEnv
