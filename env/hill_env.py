@@ -51,6 +51,10 @@ class HillEnv(ParallelEnv):
 
             self.positions[agent] = [x,y,z]
 
+        #add a position for one random survivor
+        self.survivor = [np.random.randint(0,self.grid_size), np.random.randint(0, self.grid_size), np.random.randint(0,self.grid_size)]
+
+
         
         obs = {}
         for agent in self.agents:
@@ -58,7 +62,7 @@ class HillEnv(ParallelEnv):
 
             #closest hill
             min_dist = float("inf")
-            nearestt_hill = 'None'
+            nearest_hill = 'None'
 
             for hill in self.hills:
 
@@ -105,11 +109,13 @@ class HillEnv(ParallelEnv):
                         crashed = True
                         break
             
+            
             if (crashed == False):
                 reward = 1.0
             else: 
                 reward = -0.1
             
+            #award for finding the survivor
             done = crashed
 
             rewards[agent] = reward
