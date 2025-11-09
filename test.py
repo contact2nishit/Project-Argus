@@ -9,7 +9,7 @@ def run():
     north, south, east, west = 35.70, 35.65, 139.80, 139.75 # location (region)
     origin = (west, south)
     bbox = box(west, south, east, north)  # shapely's box 
-    env = Env(origin, bbox, num_agents=5) 
+    env = Env(origin, bbox, num_agents=1) 
     
     # Create random agents
     agents = {}
@@ -21,7 +21,7 @@ def run():
     # Run one episode
     observations, infos = env.reset()
     
-    for step in range(100):
+    for step in range(1000):
         print(f"Step {step + 1}")
         
         # Get actions from agents
@@ -43,6 +43,7 @@ def run():
             break
     
     print("Demo completed!")
+    print(f"Battery: {env.battery}")
 
 
 if __name__ == '__main__':
