@@ -7,7 +7,7 @@ Interactive web-based visualization of the rescue mission.
 import streamlit as st
 import numpy as np
 from src.random_agent import RandomAgent
-from env.simple_rescue import SimpleRescueEnv
+from env.weather_rescue import SimpleRescueEnv
 
 
 def initialize_session_state():

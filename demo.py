@@ -8,7 +8,7 @@ import os
 import pandas as pd
 from src.random_agent import RandomAgent
 # from env.simple_rescue import SimpleRescueEnv
-from env.simple_rescue import CSVRescueEnv  # Using CSVRescueEnv
+from env.weather_rescue import CSVRescueEnv  # Using CSVRescueEnv
 
 def run_weather_demo_snapshot():
     """Run the weather-affected rescue demo with snapshot CSV."""
