@@ -1,17 +1,17 @@
 from src.random_agent import RandomAgent
-from env.hill_env import HillEnv
+from env.city_env import BuildingEnv
 
-def run_hill_demo():
-    print("Project Argus Hill Environement Demo")
+def run_city_demo():
+    print("Project Argus Building Environment Demo")
 
-    env = HillEnv(num_agents = 3, grid_size = 10)
+    env = BuildingEnv(num_agents = 3, grid_size = 10)
 
     agents = {
         agent_id: RandomAgent(agent_id, env.action_space)
         for agent_id in env.possible_agents
     }
 
-    print(f"Created and environemnt with {len(agents)} drones and hills : {len(env.hills)}")
+    print(f"Created and environemnt with {len(agents)} drones and building : {len(env.buildings)}")
 
     observations, infos = env.reset()
 
@@ -39,7 +39,7 @@ def run_hill_demo():
     print("\nDemo finished sucessfully!")
 
 if __name__ == '__main__':
-    run_hill_demo()
+    run_city_demo()
 
 
 
