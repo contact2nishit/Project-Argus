@@ -4,6 +4,8 @@ Simple demo script for Project Argus
 Basic demonstration of the rescue system.
 """
 
+from pettingzoo.mpe import simple_spread_v3 
+from pettingzoo.utils import aec_to_parallel
 from src.random_agent import RandomAgent
 from env.simple_rescue import SimpleRescueEnv
 
