@@ -102,6 +102,21 @@ class SimpleRescueEnv(ParallelEnv):
         if use_noise:
             self._generate_noise()
 
+    def _generate_reward(self, agent_id):
+        """Generate reward for agent based on current state."""
+        # 0.1 penalty per step, encourages efficiency
+
+        # 10.0 reward for reaching a survivor
+
+        # 5.0 reward for being within a certain distance of a survivor
+
+        # 10.0 penalty for going out of bounds or crashing with another agent
+
+        # ___ reward for area coverage
+
+
+        pass
+        
     def reset(self, use_noise = False, seed=None, options=None):
         """Reset the environment."""
         self.agents = self.possible_agents[:]
