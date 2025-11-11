@@ -23,6 +23,8 @@ experiments/logs/
 experiments/results/
 experiments/models/
 *.log
+logs/
+models/
 
 # OS
 .DS_Store
