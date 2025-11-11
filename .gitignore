@@ -29,3 +29,7 @@ experiments/models/
 Thumbs.db
 
 models/
+
+#paper
+paper/main.aux
+paper/main.out
