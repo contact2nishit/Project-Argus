@@ -1,22 +1,18 @@
-import numpy as np
-import gymnasium as gym
-import osmnx as ox
-import shapely
-import geopandas as gpd
-import pandas as pd
-from pettingzoo import ParallelEnv
-from gymnasium import spaces
-from pyproj import Transformer
+import numpy as np # type: ignore
+import gymnasium as gym # type: ignore
+import osmnx as ox # type: ignore
+import shapely # type: ignore
+import geopandas as gpd # type: ignore
+import pandas as pd # type: ignore
+from gymnasium import spaces # type: ignore
+from pyproj import Transformer # type: ignore
 
-
-
-
-class Env(ParallelEnv):
+class Env(gym.Env):
     """
     First Rescue Env
     """
     
-    def __init__(self, origin, bbox, num_agents=1,battery_capacity=500):
+    def __init__(self, origin, bbox, num_agents=1,battery_capacity=100):
         # Store parameters (don't use num_agents as it's a PettingZoo property)
         self._num_agents = num_agents
         self.origin = origin
@@ -26,13 +22,12 @@ class Env(ParallelEnv):
 
         # Agent names
         self.possible_agents = [f"drone_{i}" for i in range(num_agents)]
-        self.agents = self.possible_agents[:] # copy
-                                                                            
+        self.agents = [i for i in range(num_agents)]                  
         # Each agent gets the coordinates of the entities around it
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(self.mem_lim,2), dtype=np.float32) # (battery_level, [relative x, relative y, distance, area, type] )
+        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(self.mem_lim,7), dtype=np.float32) # (battery_level, [relative x, relative y, distance, area, type] )
 
         # Each agent can control its velocity and check if there is a survivor near its position
-        self.action_space = spaces.Box(low=np.array([-25,-25,0]), high=np.array ([25,25,1]), dtype=np.float32) #(vx,xy,check_flag) 
+        self.action_space = spaces.Box(low=np.array([-5,-5,0]), high=np.array ([5,5,1]), dtype=np.float32) #(vx,xy,check_flag) 
         
         # get geospatial data and generate map 
         self.generate_map()
@@ -104,69 +99,111 @@ class Env(ParallelEnv):
         """
         Reset the environment and Randomize map (location of surivivors)
         """
-        self.agents = self.possible_agents[:]
-
         # Randomly spread the survivors throughout the map
+        self.battery_capacity = 100
         mx, my = self.get_max()
-        self.num_survivors = np.random.randint(low=max(mx,my)*0.01,high=(mx+my)*0.01, dtype = np.int32)
+        self.num_survivors = 1 #np.random.randint(low=(mx+my)*0.5,high=(mx+my), dtype = np.int32)
         self.survivor_pos = [
             shapely.geometry.Point(np.random.uniform(0,mx), np.random.uniform(0,my))
             for _ in range(self.num_survivors)
             ]
-        self.survivor_pos = gpd.GeoDataFrame(geometry=self.survivor_pos, crs="EPSG:3857")
-
         # Distribute agent positions in the region near the origin (1% of total map size)
-        self.pos = {agent: shapely.geometry.Point(np.random.uniform(0,mx*0.01),np.random.uniform(0,my*0.01)) for agent in self.agents}
-        self.battery = {agent: self.battery_capacity for agent in self.agents}
+        self.pos =  shapely.geometry.Point(np.random.uniform(0,mx*0.01),np.random.uniform(0,my*0.01))
         
-        observations = {}
+        observations = []
         for agent in self.agents:        
-            observations[agent] = self.get_observations(self.pos[agent], field_size=100, agent=agent)
+            observations = self.get_observations(self.pos, field_size=100)
         
-        infos = {agent: {} for agent in self.agents}
+        infos =  {}
+
         return observations, infos
     
-    def step(self, actions):
-        print(f"    num survivors: {self.num_survivors}")
+    def step(self, action):
         """Execute one step."""
         # Simple random rewards and termination
-        observations = {}
-        rewards = {}
-        terminations = {}
-        truncations = {}
-        infos = {}
+        observations = None
+        rewards = None
+        terminations = None
+        truncations = None
+        infos = None
 
+        mx, my = self.get_max()
+        vx,vy,_ = action
+        self.done = False
+        print(f"SURVIVORS={self.num_survivors}, x={self.pos.x:.1f}, y={self.pos.y:.1f}, vx={vx:.1f}, vy={vy:.1f}, bat={self.battery_capacity:.1f}, mX={mx}, mY={my}, dis={self.get_distance(self.pos)}")
         for agent in self.agents:
-            self.pos[agent], penalty = self.update_positions(actions, agent)
-            observations[agent] = self.get_observations(self.pos[agent], field_size=100, agent=agent)
-            rewards[agent] =  self.get_rewards(self.pos[agent], actions[agent][2]) + penalty 
-            terminations[agent] = True if self.num_survivors == 0 else False
-            truncations[agent] = True if self.battery[agent] <= 0 else False
-            infos[agent] = {}
+            self.pos = self.update_positions(action)
+            observations = self.get_observations(self.pos, field_size=100,)
+            rewards =  self.get_rewards(self.pos, action) 
+            terminations = True if self.num_survivors <= 0 or self.done else False
+            truncations = True if self.battery_capacity <= 0 else False
+            infos = {}
         
         return observations, rewards, terminations, truncations, infos
     
-    def get_rewards(self, apos, check):
-        x,y = apos.x, apos.y
+    def get_rewards(self, apos, action):
+        x, y = apos.x, apos.y
+        vx, vy, check = action
         check = round(check)
-        if check == 1:
-            local_margin=5
-            bbox = shapely.box(x-local_margin, y-local_margin, x+local_margin, y+local_margin)
-            # Get survivors
-            found_survivors = self.get_entities(self.survivor_pos, bbox).geometry
-            num_found = len(found_survivors)
-            reward  = len(found_survivors)*2 if num_found > 0 else -1
-            
-            # Remove found survivors from survivor_pos
-            if num_found > 0:
-                remaining_survivors = self.survivor_pos[~self.survivor_pos.geometry.isin(found_survivors.geometry)]
-                self.survivor_pos = remaining_survivors.reset_index(drop=True)
-                self.num_survivors -= num_found
-            return reward
-        
-        return -0.2
+        maxx, maxy = self.get_max()
 
-    def get_observations(self, apos, field_size, agent):
+        # predict next position (but we will clip)
+        next_x = x + vx
+        next_y = y + vy
+
+        # clip next position (so agent cannot escape)
+        clipped_x = np.clip(next_x, 0.0, maxx)
+        clipped_y = np.clip(next_y, 0.0, maxy)
+
+        oob = (next_x != clipped_x) or (next_y != clipped_y)
+
+        # distance to nearest survivor BEFORE and AFTER action
+        nearest = self.survivor_pos[0]
+        if nearest is None: # no survivors left -> small positive reward to finish
+            return 0.1 
+        
+        sx, sy = nearest.x, nearest.y
+        dist_before = np.hypot(sx - x, sy - y)
+        dist_after = np.hypot(sx - clipped_x, sy - clipped_y)
+
+        max_dist = max(self.get_max()) * 1.414  # diagonal approx for normalization
+
+        # proximity reward: normalized improvement toward survivor -> positive if we get closer, negative if we get farther
+        proximity_reward = (dist_before - dist_after) / (max_dist + 1e-8)
+
+        # small step/time penalty to encourage efficiency
+        time_penalty = -0.01
+
+        # soft OOB penalty (small) only if we tried to go out
+        oob_penalty = -0.5 if oob else 0.0
+
+        # check action: if check==1, reward for nearby survivors
+        reward = proximity_reward + time_penalty + oob_penalty
+        if dist_after < 10:
+            self.done = True
+            reward += 1
+
+        if check == 1:
+            local_margin = 10
+            bbox = shapely.box(x - local_margin, y - local_margin, x + local_margin, y + local_margin)
+            survivor_pos = gpd.GeoDataFrame(
+                pd.DataFrame({'geometry': pd.Series(self.survivor_pos)}), 
+                geometry='geometry', crs="EPSG:3857"
+            )
+            found = self.get_entities(survivor_pos, bbox).geometry
+            num_found = len(found)
+            if num_found > 0:
+                # big positive reward for actually finding survivors
+                reward += num_found * 10 
+                # remove survivors from global list (persist)
+                remaining = survivor_pos[~survivor_pos.geometry.isin(found)]
+                self.survivor_pos = list(remaining.geometry.values)
+                self.num_survivors -= num_found
+                print(f"FOUND SURVIVOR: {num_found}")
+
+        return float(reward)
+
+    def get_observations(self, apos, field_size):
         # define region
         x,y = apos.x, apos.y
         half = field_size/2
@@ -176,11 +213,13 @@ class Env(ParallelEnv):
         feats = self.get_entities(self.map,bbox)
 
         # get survivors in region
-        survivors = self.get_entities(self.survivor_pos, bbox)
+
+        survivor_pos = gpd.GeoDataFrame(pd.DataFrame({'geometry': pd.Series(self.survivor_pos)}), geometry='geometry', crs="EPSG:3857")        
+        survivors = self.get_entities(survivor_pos, bbox)
         survivors["type"] = "survivor"
 
         # get agents in region
-        pos = gpd.GeoDataFrame(geometry=list(self.pos.values()), crs="EPSG:3857")
+        pos = gpd.GeoDataFrame(geometry=[self.pos], crs="EPSG:3857")
         agents = self.get_entities(pos,bbox)
         agents = agents[agents.geometry.distance(apos) > 1e-6] # exclude current agent pos
         agents["type"] = "agent"
@@ -197,24 +236,26 @@ class Env(ParallelEnv):
 
         #sort by distance
 
-        obs = np.zeros((self.mem_lim, 5), dtype=np.float32)
+        obs = np.zeros((self.mem_lim, 6), dtype=np.float32)
         for i, row in ae.iterrows():
             geom = row.geometry
             if geom.is_empty:
-                obs[i] = [-1, -1, -1, -1, -1]  # Sentinel values for padding
+                obs[i] = [-1, -1, -1, -1, -1, -1]  # Sentinel values for padding
                 continue
 
             # Nearest point on geometry
             nearest_point = shapely.ops.nearest_points(apos, geom)[1]
             
             obs[i] = [
-                nearest_point.x - apos.x,  # relative x to nearest point
-                nearest_point.y - apos.y,  # relative y to nearest point
-                apos.distance(geom),       # distance to geometry
-                geom.area,                 # size indicator
-                self.type2id(row.type)                
-            ]
-        return [self.battery[agent], obs]
+                nearest_point.x - apos.x,           # relative x to nearest point
+                nearest_point.y - apos.y,           # relative y to nearest point
+                self.get_distance(self.pos),    # distance to survivor
+                apos.distance(geom),                # distance to geometry
+                geom.area,                          # size indicator
+                self.type2id(row.get('type','unkown'))                
+            ]   
+        battery_column = np.full((self.mem_lim, 1), self.battery_capacity, dtype=np.float32)
+        return np.hstack([obs, battery_column])
 
     def type2id(self, type):
         if type == "water":
@@ -243,7 +284,6 @@ class Env(ParallelEnv):
             ae = pd.concat([ae, pad_df], ignore_index=True)
         return ae
 
-    
     def get_entities(self, entity, bbox):
         possible_matches_index = list(entity.sindex.intersection(bbox.bounds))
         possible_matches = entity.iloc[possible_matches_index]
@@ -252,45 +292,49 @@ class Env(ParallelEnv):
     def in_bounds(self, x,y,vx,vy):
         maxx, maxy = self.get_max()
         if x + vx <= 0 or x + vx >= maxx or y + vy <= 0 or y + vy >= maxy: #map bounds
+            print("going out of map bounds")
             return False
         
         if len(self.get_entities(self.buildings, shapely.geometry.Point(x + vx, y + vy))) > 0: #building bounds
+            print("building bounds")
             return False
         
         return True
 
-    def update_positions(self, actions, agent):
+    def update_positions(self, actions):
         """
         update positions and battery based on actions
         returns (x_new, y_new), penalty
         penalty is given if the agent tries to go out of bounds
         """ 
-        action = actions[agent]
-        apos = self.pos[agent]
-        x,y = apos.x, apos.y
-        vx,vy, _ = action
 
-        # update positions and battery
-        if self.in_bounds(x,y, vx,vy):
-            x += vx
-            y += vy
-            self.battery[agent] = self.update_battery(self.battery[agent],x,y,vx,vy)
-            return shapely.geometry.Point(x,y), 0
+        x,y = self.pos.x, self.pos.y
+        vx,vy, _ = actions
+        maxx, maxy = self.get_max()
+        nx = np.clip(x + vx,0, maxx)
+        ny = np.clip(y + vy,0, maxy)
 
-        else:
-            return shapely.geometry.Point(x,y), -1
+        self.battery_capacity = self.update_battery(self.battery_capacity,x,y)
+
+        return shapely.geometry.Point(nx, ny)
     
-    def update_battery(self, battery, x,y,vx,vy):
+    def update_battery(self, battery, x,y):
         if len(self.get_entities(self.water, shapely.geometry.Point(x, y))) > 0:
-            battery -= (vx + vy)*0.3
+            battery -= 1.5
 
         elif len(self.get_entities(self.parks, shapely.geometry.Point(x, y))) > 0:
-            battery -= (vx + vy)*0.4
+            battery -= 1.5
 
         elif len(self.get_entities(self.terrain, shapely.geometry.Point(x, y))) > 0:
-            battery -= (vx + vy)*0.6
+            battery -= -1.2
 
         else:   
-            battery -= (vx + vy)*0.1
+            battery -= 1.1
 
         return battery
+    
+    def get_distance(self, apos):
+        x,y = apos.x, apos.y
+        px,py = self.survivor_pos[0].x, self.survivor_pos[0].y
+        dx,dy = px - x, py - y
+        return np.sqrt(dx**2 + dy**2)
