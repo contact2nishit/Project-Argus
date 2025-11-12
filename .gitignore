@@ -3,7 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.so
-
+cache/
 # Virtual environments
 venv/
 .venv/
@@ -29,3 +29,9 @@ CLAUDE.md
 # OS
 .DS_Store
 Thumbs.db
+
+models/
+
+#paper
+paper/main.aux
+paper/main.out
