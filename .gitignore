@@ -6,7 +6,6 @@ __pycache__/
 cache/
 # Virtual environments
 venv/
-ENV/
 .venv/
 
 # IDE
@@ -23,6 +22,9 @@ experiments/logs/
 experiments/results/
 experiments/models/
 *.log
+
+# Claude Code context file
+CLAUDE.md
 
 # OS
 .DS_Store
