@@ -12,7 +12,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.random_agent import RandomAgent
-from env.simple_rescue import SimpleRescueEnv  
+from environment.simple_rescue import SimpleRescueEnv  
 # from env.weather_data.weather_rescue import WeatherRescueEnv  # Not yet implemented  
 
 

@@ -15,7 +15,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from env.simple_rescue import SimpleRescueEnv
+from environment.simple_rescue import SimpleRescueEnv
 from src.ppo_agent import PPOAgent
 
 

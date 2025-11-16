@@ -15,7 +15,7 @@ sys.path.insert(0, str(project_root))
 
 from src.random_agent import RandomAgent
 from src.heuristic_agent import HeuristicAgent
-from env.simple_rescue import SimpleRescueEnv
+from environment.simple_rescue import SimpleRescueEnv
 
 
 def initialize_session_state():
