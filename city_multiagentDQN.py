@@ -30,7 +30,7 @@ def train_dqn(num_episodes=1000, max_steps=100, save_freq=100):
     # Initialize one DQN agent per drone
     agents = {}
     for agent_name in env.possible_agents:
-        agents[agent_name] = DQNAgent(agent_name, obs_dim, action_dim, lr=0.001)
+        agents[agent_name] = DQNAgent(agent_name, obs_dim, action_dim, lr=0.003)
 
     # Metrics
     episode_rewards = []
