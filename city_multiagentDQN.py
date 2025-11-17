@@ -63,7 +63,7 @@ def train_dqn(num_episodes=1000, max_steps=100, save_freq=100):
                 )
 
                 # Update per agent every few steps
-                if step % 6 == 0:
+                if step % 4 == 0:
                     agent.learn()
 
             # Increment rescued count properly
