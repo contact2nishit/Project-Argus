@@ -134,7 +134,7 @@ class BuildingEnv(ParallelEnv):
             if (crashed == False):
                 reward = 1.0
             else: 
-                reward = -50.0
+                reward = -2.0
             
             #award for finding the survivor and going near survivors
             survivor_found = False
