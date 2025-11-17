@@ -160,7 +160,7 @@ class BuildingEnv(ParallelEnv):
                 if i < len(self.survivors):
                     self.survivors.pop(i)
 
-            done = (len(self.survivors) == 0)
+            done = crashed or(len(self.survivors) == 0)
 
             rewards[agent] = reward
             terminations[agent] = done
