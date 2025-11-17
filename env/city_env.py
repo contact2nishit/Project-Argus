@@ -153,14 +153,14 @@ class BuildingEnv(ParallelEnv):
                     reward += 2.5 * (1.0 / (dist + 0.1))  # closer -> more reward(1 to .1)
                     #increase reward from 1.5 to 2.5
                 else:
-                    reward = -1.0
+                    reward -= 1.0
 
             
             for i in sorted(survivors_to_remove, reverse=True):
                 if i < len(self.survivors):
                     self.survivors.pop(i)
 
-            done = crashed or len(self.survivors) == 0
+            done = (len(self.survivors) == 0)
 
             rewards[agent] = reward
             terminations[agent] = done
