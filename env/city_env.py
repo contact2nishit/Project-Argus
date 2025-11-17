@@ -134,7 +134,7 @@ class BuildingEnv(ParallelEnv):
             if (crashed == False):
                 reward = 1.0
             else: 
-                reward = -0.1
+                reward = -1.0
             
             #award for finding the survivor and going near survivors
             survivor_found = False
@@ -145,12 +145,14 @@ class BuildingEnv(ParallelEnv):
                 dist = np.sqrt((survivor[0] - x) ** 2 + (survivor[1] - y) ** 2)
                 survivor_min_dist = min(survivor_min_dist, dist)
                 
-                if dist < 1.0:  # found survivor
+                if dist < 1.5:  # found survivor
                     reward += 5.0
                     survivor_found = True
                     survivors_to_remove.append(i)
-                elif dist < 3.0:  # near
-                    reward += 0.5 * (1.0 / (dist + 1.0))  # closer -> more reward
+                elif dist < 3.0:  # near(increase from 1 -3)
+                    reward += 2.5 * (1.0 / (dist + 0.1))  # closer -> more reward(1 to .1)
+                    #increase reward from 1.5 to 2.5
+
             
             for i in sorted(survivors_to_remove, reverse=True):
                 if i < len(self.survivors):
