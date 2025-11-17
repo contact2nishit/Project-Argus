@@ -9,8 +9,6 @@
 \usepackage{textcomp}
 \usepackage{xcolor}
 \usepackage{hyperref}
-\usepackage{booktabs}
-\usepackage{multirow}
 
 % Custom commands
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
@@ -18,217 +16,157 @@
 
 \begin{document}
 
-\title{Multi-Agent Reinforcement Learning for Autonomous Rescue Drone Coordination\\
-{\footnotesize Project Argus}
-}
+\title{Multi-Agent Reinforcement Learning for Coordinated Drone Search and Rescue Operations}
 
-\author{
-\IEEEauthorblockN{Your Name\IEEEauthorrefmark{1},
-Teammate 2\IEEEauthorrefmark{1},
-Teammate 3\IEEEauthorrefmark{1}}
-\IEEEauthorblockA{\IEEEauthorrefmark{1}Department/University Name\\
-Email: \{author1, author2, author3\}@university.edu}
-}
+\author{\IEEEauthorblockN{Author Names Here}
+\IEEEauthorblockA{\textit{Institution/Department} \\
+\textit{University Name}\\
+City, Country \\
+email@domain.com}}
 
 \maketitle
 
 \begin{abstract}
-This paper presents a multi-agent reinforcement learning approach for coordinating autonomous rescue drones in disaster scenarios. We implement and compare Proximal Policy Optimization (PPO) and Deep Q-Network (DQN) agents in grid-based rescue environments. Our results demonstrate that PPO agents with properly designed observation spaces and reward shaping can effectively learn cooperative rescue strategies, achieving an average of X survivors rescued per episode with Y\% efficiency improvement over baseline approaches.
+% TODO: Write abstract (150-200 words summarizing problem, approach, and key findings)
 \end{abstract}
 
 \begin{IEEEkeywords}
-Multi-agent reinforcement learning, rescue robotics, PPO, autonomous drones, disaster response
+Multi-agent reinforcement learning, drone swarms, search and rescue, coordination, decentralized control
 \end{IEEEkeywords}
 
 \section{Introduction}
-In disaster response scenarios, coordinating multiple autonomous rescue drones presents significant challenges in terms of efficient search patterns, resource allocation, and survivor detection \cite{placeholder1}. Recent advances in reinforcement learning (RL) offer promising solutions for enabling autonomous agents to learn optimal coordination strategies \cite{placeholder2}.
+% Goal: Motivate the problem and state contributions clearly (½–1 page)
 
-This work presents \textbf{Project Argus}, a multi-agent RL framework for training rescue drones to:
-\begin{itemize}
-    \item Navigate complex grid-based environments
-    \item Detect and rescue survivors efficiently
-    \item Coordinate with other agents to maximize coverage
-    \item Adapt to varying environment configurations
-\end{itemize}
+\subsection{Context}
+% TODO: Briefly explain why coordinated drone search in SAR is important
 
-Our main contributions are:
-\begin{enumerate}
-    \item A comparative analysis of PPO and DQN algorithms in rescue scenarios
-    \item Novel observation space design incorporating relative positioning
-    \item Reward shaping techniques for sparse-reward environments
-    \item Empirical evaluation demonstrating X\% improvement over baselines
-\end{enumerate}
+\subsection{Problem Gap}
+% TODO: Traditional centralized control vs decentralized swarm intelligence; why MARL could help
+
+\subsection{Research Question}
+% TODO: Explicitly state your research question
+
+\subsection{Objectives}
+% TODO: List your 3–4 research objectives concisely
+
+\subsection{Contributions}
+% TODO: Bulleted list of contributions, e.g.:
+% \begin{itemize}
+%     \item Developed a reproducible MARL simulation framework for drone swarms in SAR
+%     \item Compared single-agent RL baseline vs multi-agent RL
+%     \item Quantitatively evaluated swarm cohesion, coverage, and robustness under noise and failures
+% \end{itemize}
 
 \section{Related Work}
-\subsection{Multi-Agent Reinforcement Learning}
-Brief overview of MARL techniques and their applications \cite{placeholder3}.
+% Goal: Situate your work in context (½ page)
 
-\subsection{Rescue Robotics}
-Review of existing work in autonomous rescue systems \cite{placeholder4}.
+\subsection{Prior Work on Swarm Robotics and SAR Optimization}
+% TODO: Brief overview of existing swarm robotics work
 
-\subsection{Reward Shaping}
-Discussion of reward engineering in sparse-reward environments \cite{placeholder5}.
+\subsection{Existing MARL Frameworks}
+% TODO: Mention PettingZoo, MAgent, MADDPG papers, etc.
+
+\subsection{Research Gaps}
+% TODO: Lack of open-source, reproducible frameworks or realistic environmental constraints
 
 \section{Methodology}
-\subsection{Environment Design}
-We developed a grid-based simulation environment using the PettingZoo framework \cite{pettingzoo}. The environment consists of:
+% Heart of the paper (2–2.5 pages)
 
-\begin{itemize}
-    \item \textbf{Grid Size:} 10×10 cells
-    \item \textbf{Agents:} 1-3 rescue drones
-    \item \textbf{Survivors:} 2-3 randomly placed per episode
-    \item \textbf{Actions:} Discrete movements (up, down, left, right)
-\end{itemize}
+\subsection{Simulation Framework Design}
+% TODO: Overview of environment(s): grid layout, agent sensors, victim placement, obstacles
+% TODO: Constraints modeled (communication loss, sensor noise, energy limits)
+% TODO: Architecture diagram or figure of environment setup
+% TODO: How agents communicate (shared rewards, message passing, independent learners)
 
-\subsection{Observation Space}
-Each agent receives a 4-dimensional observation vector:
-\begin{equation}
-    \mathbf{o}_t = [x_{\text{norm}}, y_{\text{norm}}, \Delta x_{\text{surv}}, \Delta y_{\text{surv}}]
-\end{equation}
+\subsection{Individual Environments}
+% Each teammate adds their environment subsection
 
-where $x_{\text{norm}}, y_{\text{norm}}$ are normalized agent coordinates, and $\Delta x_{\text{surv}}, \Delta y_{\text{surv}}$ represent the relative direction to the nearest survivor.
+\subsubsection{Environment A: [Name]}
+% TODO: 1 paragraph on environment setup and RL formulation (state, action, reward)
 
-\subsection{Reward Function}
-Our reward function comprises three components:
+\subsubsection{Environment B: [Name]}
+% TODO: 1 paragraph on environment setup and RL formulation (state, action, reward)
 
-\begin{equation}
-    r_t = r_{\text{rescue}} + r_{\text{distance}} + r_{\text{time}}
-\end{equation}
+\subsubsection{Environment C: [Name]}
+% TODO: 1 paragraph on environment setup and RL formulation (state, action, reward)
 
-\begin{itemize}
-    \item \textbf{Rescue Reward:} $r_{\text{rescue}} = +10.0$ when rescuing a survivor
-    \item \textbf{Distance Reward:} $r_{\text{distance}} = (d_{t-1} - d_t) \times 0.1$
-    \item \textbf{Time Penalty:} $r_{\text{time}} = -0.01$ per timestep
-\end{itemize}
+\subsection{Reinforcement Learning Algorithms}
 
-This design encourages efficient pathfinding while providing dense feedback for learning.
+\subsubsection{Single-Agent Baseline}
+% TODO: Describe the policy and objective (e.g., PPO, DQN)
 
-\subsection{Algorithm: Proximal Policy Optimization}
-We employ PPO with an Actor-Critic architecture:
+\subsubsection{Multi-Agent RL}
+% TODO: Explain how coordination is achieved (e.g., MADDPG, QMIX, MAPPO)
+% TODO: Training details (episodes, reward shaping, exploration strategy)
+% TODO: Include figure showing training setup or algorithm pipeline
 
-\textbf{Actor Network:} Policy $\pi_\theta(a|s)$
-\begin{equation}
-    \text{Input}(4) \rightarrow \text{FC}(64) \rightarrow \text{FC}(64) \rightarrow \text{Softmax}(4)
-\end{equation}
+\section{Results and Analysis}
+% 1.5–2 pages
 
-\textbf{Critic Network:} Value function $V_\phi(s)$
-\begin{equation}
-    \text{Input}(4) \rightarrow \text{FC}(64) \rightarrow \text{FC}(64) \rightarrow \text{Output}(1)
-\end{equation}
-
-\textbf{PPO Objective:}
-\begin{equation}
-    L^{\text{CLIP}}(\theta) = \mathbb{E}_t\left[\min\left(r_t(\theta)\hat{A}_t, \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon)\hat{A}_t\right)\right]
-\end{equation}
-
-where $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\theta_{\text{old}}}(a_t|s_t)}$ and $\hat{A}_t$ is the advantage estimate.
-
-\subsection{Training Configuration}
-\begin{itemize}
-    \item \textbf{Episodes:} 1000
-    \item \textbf{Learning Rate:} $3 \times 10^{-4}$
-    \item \textbf{Discount Factor:} $\gamma = 0.99$
-    \item \textbf{Clip Parameter:} $\epsilon = 0.2$
-    \item \textbf{Update Frequency:} Every episode
-\end{itemize}
-
-\section{Experiments}
-\subsection{Experimental Setup}
-We evaluate our approach across three configurations:
-\begin{enumerate}
-    \item Single-agent rescue (baseline)
-    \item Multi-agent with random observations (ablation)
-    \item Multi-agent with engineered observations (full system)
-\end{enumerate}
-
-\subsection{Evaluation Metrics}
-\begin{itemize}
-    \item Average survivors rescued per episode
-    \item Episode reward (cumulative)
-    \item Average episode length
-    \item Success rate (all survivors found)
-\end{itemize}
-
-\section{Results}
-\subsection{Training Performance}
-Figure \ref{fig:training} shows the learning curves for PPO agents over 1000 episodes.
-
-% TODO: Add figure
-% \begin{figure}[t]
-%     \centering
-%     \includegraphics[width=\columnwidth]{figures/ppo_training_results.png}
-%     \caption{PPO training performance showing episode rewards, survivors rescued, and episode lengths over 1000 training episodes.}
-%     \label{fig:training}
-% \end{figure}
+\subsection{Performance Metrics}
+% TODO: Define metrics
+% \begin{itemize}
+%     \item Coverage rate
+%     \item Time to detection
+%     \item Swarm cohesion (e.g., average inter-agent distance)
+%     \item Robustness (performance under noise/failure)
+% \end{itemize}
 
 \subsection{Quantitative Results}
-Table \ref{tab:results} presents the performance comparison across different configurations.
+% TODO: Comparison tables or graphs for Single-Agent vs Multi-Agent results
+% TODO: Highlight improvements in coverage/time to detection
 
-\begin{table}[h]
-\centering
-\caption{Performance Comparison}
-\label{tab:results}
-\begin{tabular}{lccc}
-\toprule
-\textbf{Method} & \textbf{Avg Rescued} & \textbf{Avg Reward} & \textbf{Success \%} \\
-\midrule
-Random Agent & 0.3 $\pm$ 0.5 & -2.1 & 10\% \\
-DQN (Random Obs) & 0.5 $\pm$ 0.6 & 1.2 & 15\% \\
-PPO (Random Obs) & 0.6 $\pm$ 0.7 & 3.8 & 20\% \\
-PPO (Engineered Obs) & \textbf{0.9 $\pm$ 0.4} & \textbf{7.5} & \textbf{65\%} \\
-\bottomrule
-\end{tabular}
-\end{table}
+% Example table structure:
+% \begin{table}[htbp]
+% \caption{Performance Comparison}
+% \begin{center}
+% \begin{tabular}{|c|c|c|c|}
+% \hline
+% \textbf{Environment} & \textbf{Single-Agent} & \textbf{Multi-Agent} & \textbf{Improvement} \\
+% \hline
+% Environment A & - & - & - \\
+% Environment B & - & - & - \\
+% Environment C & - & - & - \\
+% \hline
+% \end{tabular}
+% \label{tab:results}
+% \end{center}
+% \end{table}
 
-Key findings:
-\begin{itemize}
-    \item Engineered observations improved performance by X\%
-    \item PPO outperformed DQN in sparse-reward settings
-    \item Reward shaping enabled stable learning
-\end{itemize}
+\subsection{Qualitative Observations}
+% TODO: Visuals or heatmaps showing swarm paths
+% TODO: Notable emergent behaviors (adaptive formation, division of labor)
+
+% Example figure:
+% \begin{figure}[htbp]
+% \centerline{\includegraphics[width=\columnwidth]{figures/placeholder.png}}
+% \caption{Swarm coordination visualization}
+% \label{fig:swarm}
+% \end{figure}
 
 \section{Discussion}
-\subsection{Impact of Observation Design}
-Our results clearly demonstrate that observation quality is critical for learning success. Random observations prevented meaningful learning, while engineered features encoding relative positioning enabled effective policy development.
+% ½ page
 
-\subsection{Reward Shaping Effectiveness}
-Distance-based reward shaping provided essential gradient information in the sparse-reward rescue environment, reducing the challenge of credit assignment.
+% TODO: What patterns or strategies did agents learn?
+% TODO: Did different environments encourage different emergent behaviors?
+% TODO: Where did MARL underperform (e.g., unstable coordination, convergence issues)?
+% TODO: How does this contribute to future SAR swarm research?
 
-\subsection{Limitations}
-\begin{itemize}
-    \item Grid-based environment is simplified vs. real-world
-    \item Fixed number of survivors per episode
-    \item No communication between agents
-    \item No obstacles or environment complexity
-\end{itemize}
+\section{Conclusion and Future Work}
+% ¼–½ page
 
-\section{Future Work}
-\begin{enumerate}
-    \item Extend to continuous action spaces
-    \item Implement inter-agent communication
-    \item Add environmental obstacles and dynamics
-    \item Transfer learning to real geospatial environments
-    \item Multi-objective optimization (speed vs. coverage)
-\end{enumerate}
+\subsection{Summary of Findings}
+% TODO: Main findings, e.g., "Multi-agent reinforcement learning improved coverage by X% 
+% and maintained swarm cohesion despite communication loss"
 
-\section{Conclusion}
-This work presented a multi-agent reinforcement learning system for autonomous rescue drone coordination. Through careful observation space engineering and reward shaping, our PPO-based agents achieved effective learning in sparse-reward rescue scenarios. Our results demonstrate the importance of domain knowledge in RL system design and provide a foundation for more complex rescue robotics applications.
-
-The code and trained models are available at: \url{https://github.com/contact2nishit/Project-Argus}
+\subsection{Future Directions}
+% TODO: Physical drone deployment, curriculum learning, hybrid communication policies, 
+% domain randomization for transfer to reality
 
 \begin{thebibliography}{00}
-\bibitem{placeholder1} Author A. et al., ``Title of paper on disaster response,'' \textit{Journal Name}, vol. X, no. Y, pp. Z-ZZ, Year.
-
-\bibitem{placeholder2} Author B. et al., ``Reinforcement learning for robotics,'' \textit{Conference Name}, Year.
-
-\bibitem{placeholder3} Author C. et al., ``Multi-agent reinforcement learning survey,'' \textit{AI Review}, Year.
-
-\bibitem{placeholder4} Author D. et al., ``Rescue robotics systems,'' \textit{Robotics Journal}, Year.
-
-\bibitem{placeholder5} Author E. et al., ``Reward shaping techniques,'' \textit{ML Conference}, Year.
-
-\bibitem{pettingzoo} Terry, J. K. et al., ``PettingZoo: Gym for Multi-Agent Reinforcement Learning,'' \textit{arXiv preprint arXiv:2009.14471}, 2020.
-
+% TODO: Add 10-15 key sources
+% \bibitem{b1} Author, ``Title,'' Journal, vol., no., pp., year.
+% \bibitem{b2} Author, ``Title,'' Conference, year.
 \end{thebibliography}
 
 \end{document}
