@@ -146,7 +146,7 @@ class BuildingEnv(ParallelEnv):
                 survivor_min_dist = min(survivor_min_dist, dist)
                 
                 if dist < 1.5:  # found survivor
-                    reward += 25.0
+                    reward += 50.0
                     survivor_found = True
                     survivors_to_remove.append(i)
                 elif dist < 3.0:  # near(increase from 1 -3)
