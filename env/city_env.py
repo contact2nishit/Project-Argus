@@ -134,7 +134,7 @@ class BuildingEnv(ParallelEnv):
             if (crashed == False):
                 reward = 1.0
             else: 
-                reward = -2.0
+                reward = -10.0
             
             #award for finding the survivor and going near survivors
             survivor_found = False
@@ -166,7 +166,7 @@ class BuildingEnv(ParallelEnv):
             terminations[agent] = done
             truncations[agent] = False
 
-            # ✅ update infos to indicate rescued
+            # update infos to indicate rescued
             infos[agent] = {"rescued": survivor_found}
 
             #get the new closest building after moving
