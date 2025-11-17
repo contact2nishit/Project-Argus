@@ -153,7 +153,7 @@ class BuildingEnv(ParallelEnv):
                     reward += 5.0/(dist + 1)  # closer -> more reward(1 to .1)
                     #increase reward from 1.5 to 2.5
                 else:
-                    reward -= 1.0
+                    reward -= 0.1
 
             
             for i in sorted(survivors_to_remove, reverse=True):
