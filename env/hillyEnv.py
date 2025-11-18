@@ -18,7 +18,7 @@ class HillyEnv(ParallelEnv):
         self.agents = self.possible_agents[:]
 
         #observations
-        self.observations_space = spaces.Box(low = 0, high = 100, shape = (4,), dtype = np.float32)
+        self.observations_space = spaces.Box(low = 0, high = 100, shape = (5,), dtype = np.float32)
         #actions:beug don't make it discrete anymore -> changein x,y,and z dx,dy,dz
         self.action_space = spaces.Box(low = -1.0, high = 1.0, shape = (3,), dtype = np.float32)
 
@@ -40,7 +40,7 @@ class HillyEnv(ParallelEnv):
             ])for agent in self.agents
         }
 
-        num_survivors = np.random.randint(1,5)
+        num_survivors = np.random.randint(2,4)
         self.survivors = [np.array([np.random.uniform(0,self.grid_size),
         np.random.uniform(0,self.grid_size)]) for _ in range(num_survivors)]
 
@@ -52,8 +52,14 @@ class HillyEnv(ParallelEnv):
         obs = {}
         for agent in self.agents:
             x, y, z = self.positions[agent]
-            hill_z = hill_heights(x,y,self.hills)
-            obs[agent] = np.array([x,y,z, hill_z], dtype = np.float32) 
+            hill_z = hill_heights(x, y, self.hills)
+            
+            if len(self.survivors) > 0:
+                nearest_dist = min(np.linalg.norm(self.positions[agent][:2] - survivor) for survivor in self.survivors)
+            else:
+                nearest_dist = 0.0
+                
+            obs[agent] = np.array([x, y, z, hill_z, nearest_dist], dtype=np.float32) 
         return obs
     
     def step(self, actions):
@@ -81,33 +87,41 @@ class HillyEnv(ParallelEnv):
 
             ##check if it is able to be near a survivor
             survivor_found = False
-            for survivor in self.survivors:
-                dist = np.linalg.norm(self.positions[agent][:2] - survivor)
-                ##debug: if it is near the survivor
-                if dist < 1.0: 
-                    survivor_found = True
-                    break
+            nearest_distance = 0.0
+
+            if len(self.survivors) > 0:
+
+                i = 0
+                while i < len(self.survivors):
+                    survivor = self.survivors[i]
+                    dist = np.linalg.norm(self.positions[agent][:2] - survivor)
+                    nearest_distance = min(nearest_distance, dist)
+                    ##debug: if it is near the survivor
+                    if dist < 1.0: 
+                        survivor_found = True
+                        self.survivors.pop(i)
+                    else:
+                        i += 1
             
             if survivor_found == True:
                 reward += 5.0
+
+            else:
+                if len(self.survivors) > 0:
+                    #debug: smaller distance bigger the award
+                    reward += 0.1 * (1.0/ (nearest_distance + 1.0))
+
+
             
             rewards[agent] = reward
             terminations[agent] = crashed
             truncations[agent] = False
             infos[agent] = {}
         
-        for agent in self.agents:
-            x,y,z = self.positions[agent]
-            hill_z = hill_heights(x,y, self.hills)
-
-            if len(self.survivors) > 0:
-                nearest_dist = min(np.linalg.norm(self.positions[agent][:2] - i) for i in self.survivors)
-            else:
-                nearest_dist - 0.0
         
 
 
-            obs[agent] = np.array([x,y,z,hill_z, nearest_dist], dtype = np.float32)
+        obs = self.get_observations()
         return obs, rewards, terminations, truncations, infos
 
 
