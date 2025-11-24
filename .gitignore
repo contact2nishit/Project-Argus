@@ -35,3 +35,5 @@ models/
 #paper
 paper/main.aux
 paper/main.out
+paper/main.f*
+paper/main.s*
